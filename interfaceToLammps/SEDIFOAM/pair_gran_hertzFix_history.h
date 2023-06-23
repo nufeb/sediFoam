@@ -12,9 +12,9 @@
 ------------------------------------------------------------------------- */
 
 #ifdef PAIR_CLASS
-
+// clang-format off
 PairStyle(gran/hertzFix/history,PairGranHertzFixHistory)
-
+// clang-format on
 #else
 
 #ifndef LMP_PAIR_GRAN_HERTZFIX_HISTORY_H
@@ -27,9 +27,9 @@ namespace LAMMPS_NS {
 class PairGranHertzFixHistory : public PairGranHookeHistory {
  public:
   PairGranHertzFixHistory(class LAMMPS *);
-  virtual void compute(int, int);
-  void settings(int, char **);
-  double single(int, int, int, int, double, double, double, double &);
+  void compute(int, int) override;
+  void settings(int, char **) override;
+  double single(int, int, int, int, double, double, double, double &) override;
 };
 
 }

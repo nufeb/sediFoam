@@ -54,16 +54,16 @@ FixWallGranFix::FixWallGranFix(LAMMPS *lmp, int narg, char **arg) :
 
   // wall/particle coefficients
 
-  kn = force->numeric(FLERR,arg[3]);
-  if (strcmp(arg[4],"NULL") == 0) kt = kn * 2.0/7.0;
-  else kt = force->numeric(FLERR,arg[4]);
+  kn = utils::numeric(FLERR,arg[4],false,lmp);
+  if (strcmp(arg[5],"NULL") == 0) kt = kn * 2.0/7.0;
+  else kt = utils::numeric(FLERR,arg[5],false,lmp);
 
-  gamman = force->numeric(FLERR,arg[5]);
-  if (strcmp(arg[6],"NULL") == 0) gammat = 0.5 * gamman;
-  else gammat = force->numeric(FLERR,arg[6]);
+  gamman = utils::numeric(FLERR,arg[6],false,lmp);
+  if (strcmp(arg[7],"NULL") == 0) gammat = 0.5 * gamman;
+  else gammat = utils::numeric(FLERR,arg[7],false,lmp);
 
-  xmu = force->numeric(FLERR,arg[7]);
-  int dampflag = force->inumeric(FLERR,arg[8]);
+  xmu = utils::numeric(FLERR,arg[8],false,lmp);
+  int dampflag = utils::inumeric(FLERR,arg[9],false,lmp);
   if (dampflag == 0) gammat = 0.0;
 
   if (kn < 0.0 || kt < 0.0 || gamman < 0.0 || gammat < 0.0 ||
@@ -84,31 +84,31 @@ FixWallGranFix::FixWallGranFix(LAMMPS *lmp, int narg, char **arg) :
     if (narg < iarg+3) error->all(FLERR,"Illegal fix wall/granFix command");
     wallstyle = XPLANE;
     if (strcmp(arg[iarg+1],"NULL") == 0) lo = -BIG;
-    else lo = force->numeric(FLERR,arg[iarg+1]);
+    else lo = utils::numeric(FLERR,arg[iarg+1],false,lmp);
     if (strcmp(arg[iarg+2],"NULL") == 0) hi = BIG;
-    else hi = force->numeric(FLERR,arg[iarg+2]);
+    else hi = utils::numeric(FLERR,arg[iarg+2],false,lmp);
     iarg += 3;
   } else if (strcmp(arg[iarg],"yplane") == 0) {
     if (narg < iarg+3) error->all(FLERR,"Illegal fix wall/granFix command");
     wallstyle = YPLANE;
     if (strcmp(arg[iarg+1],"NULL") == 0) lo = -BIG;
-    else lo = force->numeric(FLERR,arg[iarg+1]);
+    else lo = utils::numeric(FLERR,arg[iarg+1],false,lmp);
     if (strcmp(arg[iarg+2],"NULL") == 0) hi = BIG;
-    else hi = force->numeric(FLERR,arg[iarg+2]);
+    else hi = utils::numeric(FLERR,arg[iarg+2],false,lmp);
     iarg += 3;
   } else if (strcmp(arg[iarg],"zplane") == 0) {
     if (narg < iarg+3) error->all(FLERR,"Illegal fix wall/granFix command");
     wallstyle = ZPLANE;
     if (strcmp(arg[iarg+1],"NULL") == 0) lo = -BIG;
-    else lo = force->numeric(FLERR,arg[iarg+1]);
+    else lo = utils::numeric(FLERR,arg[iarg+1],false,lmp);
     if (strcmp(arg[iarg+2],"NULL") == 0) hi = BIG;
-    else hi = force->numeric(FLERR,arg[iarg+2]);
+    else hi = utils::numeric(FLERR,arg[iarg+2],false,lmp);
     iarg += 3;
   } else if (strcmp(arg[iarg],"zcylinder") == 0) {
     if (narg < iarg+2) error->all(FLERR,"Illegal fix wall/granFix command");
     wallstyle = ZCYLINDER;
     lo = hi = 0.0;
-    cylradius = force->numeric(FLERR,arg[iarg+1]);
+    cylradius = utils::numeric(FLERR,arg[iarg+1],false,lmp);
     iarg += 2;
   }
 
@@ -124,8 +124,8 @@ FixWallGranFix::FixWallGranFix(LAMMPS *lmp, int narg, char **arg) :
       else if (strcmp(arg[iarg+1],"y") == 0) axis = 1;
       else if (strcmp(arg[iarg+1],"z") == 0) axis = 2;
       else error->all(FLERR,"Illegal fix wall/granFix command");
-      amplitude = force->numeric(FLERR,arg[iarg+2]);
-      period = force->numeric(FLERR,arg[iarg+3]);
+      amplitude = utils::numeric(FLERR,arg[iarg+2],false,lmp);
+      period = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       wiggle = 1;
       iarg += 4;
     } else if (strcmp(arg[iarg],"shear") == 0) {
@@ -134,7 +134,7 @@ FixWallGranFix::FixWallGranFix(LAMMPS *lmp, int narg, char **arg) :
       else if (strcmp(arg[iarg+1],"y") == 0) axis = 1;
       else if (strcmp(arg[iarg+1],"z") == 0) axis = 2;
       else error->all(FLERR,"Illegal fix wall/granFix command");
-      vshear = force->numeric(FLERR,arg[iarg+2]);
+      vshear = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       wshear = 1;
       iarg += 3;
     } else error->all(FLERR,"Illegal fix wall/granFix command");

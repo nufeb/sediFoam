@@ -26,6 +26,7 @@
 #include "fix.h"
 #include "neighbor.h"
 #include "neigh_list.h"
+#include "fix_neigh_history.h"
 #include "comm.h"
 #include "memory.h"
 #include "error.h"
@@ -61,7 +62,7 @@ void PairGranHertzFixHistory::compute(int eflag, int vflag)
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
 
-  computeflag = 1;
+  // computeflag = 1;
   int shearupdate = 1;
   if (update->setupflag) shearupdate = 0;
 
@@ -82,7 +83,7 @@ void PairGranHertzFixHistory::compute(int eflag, int vflag)
     for (i = 0; i < nlocal; i++)
       if (body[i] >= 0) mass_rigid[i] = mass_body[body[i]];
       else mass_rigid[i] = 0.0;
-    comm->forward_comm_pair(this);
+    comm->forward_comm(this);
   }
 
   double **x = atom->x;
@@ -101,8 +102,8 @@ void PairGranHertzFixHistory::compute(int eflag, int vflag)
   ilist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
-  firsttouch = list->listgranhistory->firstneigh;
-  firstshear = list->listgranhistory->firstdouble;
+  firsttouch = fix_history->firstflag;
+  firstshear = fix_history->firstvalue;
 
   // loop over neighbors of my atoms
 
@@ -294,16 +295,16 @@ void PairGranHertzFixHistory::settings(int narg, char **arg)
 {
   if (narg != 6) error->all(FLERR,"Illegal pair_style command");
 
-  kn = force->numeric(FLERR,arg[0]);
+  kn = utils::numeric(FLERR,arg[0],false,lmp);
   if (strcmp(arg[1],"NULL") == 0) kt = kn * 2.0/7.0;
-  else kt = force->numeric(FLERR,arg[1]);
+  else kt = utils::numeric(FLERR,arg[1],false,lmp);
 
-  gamman = force->numeric(FLERR,arg[2]);
+  gamman = utils::numeric(FLERR,arg[2],false,lmp);
   if (strcmp(arg[3],"NULL") == 0) gammat = 0.5 * gamman;
-  else gammat = force->numeric(FLERR,arg[3]);
+  else gammat = utils::numeric(FLERR,arg[3],false,lmp);
 
-  xmu = force->numeric(FLERR,arg[4]);
-  dampflag = force->inumeric(FLERR,arg[5]);
+  xmu = utils::numeric(FLERR,arg[4],false,lmp);
+  dampflag = utils::inumeric(FLERR,arg[5],false,lmp);
   if (dampflag == 0) gammat = 0.0;
 
   if (kn < 0.0 || kt < 0.0 || gamman < 0.0 || gammat < 0.0 ||
@@ -433,8 +434,8 @@ double PairGranHertzFixHistory::single(int i, int j, int itype, int jtype,
 
   int *jlist = list->firstneigh[i];
   int jnum = list->numneigh[i];
-  int *touch = list->listgranhistory->firstneigh[i];
-  double *allshear = list->listgranhistory->firstdouble[i];
+  int *touch = list->firstneigh[i];
+  double *allshear = fix_history->firstvalue[i];
 
   for (int jj = 0; jj < jnum; jj++) {
     neighprev++;

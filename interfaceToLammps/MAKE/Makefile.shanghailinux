@@ -6,20 +6,20 @@ SHELL = /bin/sh
 # compiler/linker settings
 # specify flags and libraries needed for your compiler
 
-CC =		mpic++
-CCFLAGS =	-O2 \
+CC =		mpicxx 
+CCFLAGS =	-g -O3 -std=c++11 \
 		-funroll-loops -fstrict-aliasing -Wall -W -Wno-uninitialized
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
-LINK =		mpic++
-LINKFLAGS =	-O
+LINK =		mpicxx
+LINKFLAGS =	-g -O3 -std=c++11 
 LIB =           -lstdc++
 SIZE =		size
 
 ARCHIVE =	ar
 ARFLAGS =	-rcsv
-SHLIBFLAGS =	-shared
+SHLIBFLAGS =	-shared 
 
 # ---------------------------------------------------------------------
 # LAMMPS-specific settings
@@ -38,8 +38,8 @@ LMP_INC =	-DLAMMPS_GZIP
 # PATH = path for MPI library
 # LIB = name of MPI library
 
-MPI_INC =       
-MPI_PATH =      -L..
+MPI_INC =       -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX=1
+MPI_PATH =      
 MPI_LIB =	
 
 # FFT library, OPTIONAL
@@ -66,14 +66,16 @@ JPG_LIB =
 
 # ---------------------------------------------------------------------
 # build rules and dependencies
-# no need to edit this section
+# do not edit this section
 
-include	Makefile.package.settings
-include	Makefile.package
+include Makefile.package.settings
+include Makefile.package
 
 EXTRA_INC = $(LMP_INC) $(PKG_INC) $(MPI_INC) $(FFT_INC) $(JPG_INC) $(PKG_SYSINC)
 EXTRA_PATH = $(PKG_PATH) $(MPI_PATH) $(FFT_PATH) $(JPG_PATH) $(PKG_SYSPATH)
-EXTRA_LIB = $(PKG_LIB) $(MPI_LIB) $(FFT_LIB) $(JPG_LIB) $(PKG_SYSLIB)
+EXTRA_LIB = $(PKG_LIB) $(MPI_LIB) $(FFT_LIB) $(JPG_LIB) $(PKG_SYSLIB) $(DYN_LIB)
+EXTRA_CPP_DEPENDS = $(PKG_CPP_DEPENDS)
+EXTRA_LINK_DEPENDS = $(PKG_LINK_DEPENDS)
 
 # Path to src files
 
@@ -82,28 +84,35 @@ vpath %.h ..
 
 # Link target
 
-$(EXE):	$(OBJ)
-	$(LINK) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(EXTRA_LIB) $(LIB) -o $(EXE)
-	$(SIZE) $(EXE)
+$(EXE): main.o $(LMPLIB) $(EXTRA_LINK_DEPENDS)
+	$(LINK) $(LINKFLAGS) main.o $(EXTRA_PATH) $(LMPLINK) $(EXTRA_LIB) $(LIB) -o $@
+	$(SIZE) $@
 
 # Library targets
 
-lib:	$(OBJ)
-	$(ARCHIVE) $(ARFLAGS) $(EXE) $(OBJ)
+$(ARLIB): $(OBJ) $(EXTRA_LINK_DEPENDS)
+	@rm -f ../$(ARLIB)
+	$(ARCHIVE) $(ARFLAGS) ../$(ARLIB) $(OBJ)
+	@rm -f $(ARLIB)
+	@ln -s ../$(ARLIB) $(ARLIB)
 
-shlib:	$(OBJ)
-	$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) $(EXTRA_PATH) -o $(EXE) \
-        $(OBJ) $(EXTRA_LIB) $(LIB)
+$(SHLIB): $(OBJ) $(EXTRA_LINK_DEPENDS)
+	$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) $(EXTRA_PATH) -o ../$(SHLIB) \
+		$(OBJ) $(EXTRA_LIB) $(LIB)
+	@rm -f $(SHLIB)
+	@ln -s ../$(SHLIB) $(SHLIB)
 
 # Compilation rules
 
 %.o:%.cpp
 	$(CC) $(CCFLAGS) $(SHFLAGS) $(EXTRA_INC) -c $<
 
-%.d:%.cpp
-	$(CC) $(CCFLAGS) $(EXTRA_INC) $(DEPFLAGS) $< > $@
-
 # Individual dependencies
 
-DEPENDS = $(OBJ:.o=.d)
-sinclude $(DEPENDS)
+depend : fastdep.exe $(SRC)
+	@./fastdep.exe $(EXTRA_INC) -- $^ > .depend || exit 1
+
+fastdep.exe: ../DEPEND/fastdep.c
+	cc -O -o $@ $<
+
+sinclude .depend

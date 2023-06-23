@@ -70,15 +70,12 @@ int FixCohe::setmask()
 /* ---------------------------------------------------------------------- */
 
 void FixCohe::init()
-{ 
-
- int irequest = neighbor->request((void *) this);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->fix = 1;
+{
+  neighbor->add_request(this,NeighConst::REQ_DEFAULT);
   
 
-if (strcmp(update->integrate_style,"respa") == 0)
-    nlevels_respa = ((Respa *) update->integrate)->nlevels;
+  if (strcmp(update->integrate_style,"respa") == 0)
+      nlevels_respa = ((Respa *) update->integrate)->nlevels;
 
 }
 
@@ -311,7 +308,7 @@ int FixCohe::count_pairs(int flag)
  // double *special_coul = force->special_coul;
  // double *special_lj = force->special_lj;
 // Invoke half neighbor list (will copy or build if necessary)  
-  if (flag == 0) neighbor->build_one(list->index);
+  if (flag == 0) neighbor->build_one(list);
 
   inum = list->inum;
   ilist = list->ilist;

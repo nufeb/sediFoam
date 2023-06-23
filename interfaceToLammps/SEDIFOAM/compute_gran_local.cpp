@@ -103,10 +103,7 @@ void ComputeGranLocal::init()
 
   // need an occasional half neighbor list
 
-  int irequest = neighbor->request((void *) this);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->compute = 1;
-  neighbor->requests[irequest]->occasional = 1;
+  neighbor->add_request(this,NeighConst::REQ_DEFAULT);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -155,7 +152,7 @@ int ComputeGranLocal::compute_pairs(int flag)
 
   // invoke half neighbor list (will copy or build if necessary)
 
-  if (flag == 0) neighbor->build_one(list->index);
+  if (flag == 0) neighbor->build_one(list);
 
   inum = list->inum;
   ilist = list->ilist;

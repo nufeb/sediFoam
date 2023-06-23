@@ -144,7 +144,7 @@ void PairLubricatePoly::compute(int eflag, int vflag)
     // copy updated omega to the ghost particles
     // no need to do this if not shearing since comm->ghost_velocity is set
 
-    comm->forward_comm_pair(this);
+    comm->forward_comm(this);
   }
 
   // This section of code adjusts R0/RT0/RS0 if necessary due to changes
@@ -468,9 +468,7 @@ void PairLubricatePoly::init_style()
     if (radius[i] == 0.0)
       error->one(FLERR,"Pair lubricate/poly requires extended particles");
 
-  int irequest = neighbor->request(this);
-  neighbor->requests[irequest]->half = 0;
-  neighbor->requests[irequest]->full = 1;
+  neighbor->add_request(this,NeighConst::REQ_DEFAULT);
 
   // set the isotropic constants that depend on the volume fraction
   // vol_T = total volume
