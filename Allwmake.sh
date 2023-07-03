@@ -6,7 +6,7 @@ cd ${0%/*} || exit 1 # Run from this directory
 echo "Installing lammpsFoam (for mac/linux).."
 currentDir=$PWD
 echo "Enter the directory of your LAMMPS and press [ENTER] "
-echo -n "(default directory ./lammps-1Feb14): "
+echo -n "(default directory ./lammps-stable_23Jun2022_update4): "
 read lammpsDir
 
 # Determine if the directory of LAMMPS exists or not.
@@ -14,13 +14,31 @@ read lammpsDir
 if [ ! -d "$lammpsDir" ]
 then
     echo "Directory NOT found! Use default directory instead."
-    lammpsDir="$PWD/lammps-1Feb14"
+    lammpsDir="$PWD/lammps-stable_23Jun2022_update4"
 fi
 
 cd $lammpsDir
 lammpsDir=$PWD
 
 echo "Directory of LAMMPS is: " $lammpsDir
+
+echo "*******************************************"
+echo "select the system you are running, then press enter"
+echo "  1) Ubuntu14.x - Ubuntu16.x"
+echo "  2) Ubuntu17.x - Ubuntu18.x" 
+echo "  3) Centos"
+echo "  4) Mac" 
+echo "*******************************************"
+read n
+
+case $n in
+  1) echo "You chose 1) Ubuntu14.x - Ubuntu16.x";;
+  2) echo "You chose 2) Ubuntu17.x - Ubuntu18.x";;
+  3) echo "You chose 3) Centos";;
+  4) echo "You chose 4) Mac";;
+  *) echo "Unknown option"; exit;;
+esac
+
 
 # Copy/link all the extra implementations
 cd $lammpsDir/src
@@ -36,6 +54,7 @@ make
 cd $lammpsDir/src
 
 # Make packages
+make yes-SEDIFOAM
 make yes-GRANULAR
 make yes-KSPACE
 make yes-MANYBODY
@@ -45,39 +64,32 @@ make yes-RIGID # freeze
 make yes-MISC # deposit
 make yes-VORONOI # ??
 
-version=`uname`
+make -j4 shanghaimac mode=shlib
+cd $FOAM_USER_APPBIN || exit 1
+    
 # Use different options according to different versions
-if [ $version == "Linux" ]
-then
-    echo "The version you choose is openmpi version"
-    make shanghailinux
-    make makeshlib
-    make -f Makefile.shlib shanghailinux
-    cd $FOAM_USER_LIBBIN
-    ln -sf $lammpsDir/src/liblammps_shanghailinux.so .
-    cd $currentDir/lammpsFoam
+if [ $n == 4 ];then 
+    ln -sf $lammps_dir/src/liblammps_shanghaimac.so .
+    cd $sedifoam_dir/lammpsFoam || exit 1
     touch Make/options
-    echo "LAMMPS_DIR ="$lammpsSRC > Make/options
-    cat Make/options-linux-openmpi >> Make/options
-elif [ $version == "Darwin" ]
-then
-    echo "The version you choose is mac version"
-    make shanghaimac
-    make makeshlib
-    make -f Makefile.shlib shanghaimac
-    cd $FOAM_USER_LIBBIN
-    ln -sf $lammpsDir/src/liblammps_shanghaimac.so .
-    cd $currentDir/lammpsFoam
-    touch Make/options
-    echo "LAMMPS_DIR ="$lammpsSRC > Make/options
+    echo "LAMMPS_DIR ="$lammps_src > Make/options
     cat Make/options-mac-openmpi >> Make/options
 else
-    echo "Sorry, we haven't got the required version."
-    echo "Please contact the developer (sunrui@vt.edu) for help."
-fi
+    ln -sf $lammps_dir/src/liblammps_shanghailinux.so .
+    cd $sedifoam_dir/lammpsFoam || exit 1
+    touch Make/options
+    echo "LAMMPS_DIR ="$lammps_src > Make/options
 
-wmake libso dragModels
-wmake libso chPressureGrad
+    case $n in
+	1) cat Make/options-ubuntu16-openmpi >> Make/options ;;
+	2) cat Make/options-ubuntu18-openmpi >> Make/options ;;
+	3) cat Make/options-linux-openmpi >> Make/options ;;
+    esac
+
+fi 
+
+wmake libso dragModels 
+wmake libso chPressureGrad 
 wmake libso lammpsFoamTurbulenceModels
 wmake 
 
